@@ -19,6 +19,7 @@ const schema = z.object({
   longLeadTimeDays:        z.coerce.number().min(1),
   longLeadTimeTtlMinutes:  z.coerce.number().min(1),
   defaultTtlMinutes:       z.coerce.number().min(1),
+  checkInTime:             z.string().regex(/^\d{2}:\d{2}$/, 'HH:mm 형식으로 입력해주세요'),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -39,6 +40,7 @@ export default function RegisterAccommodationPage() {
       longLeadTimeDays: 30,
       longLeadTimeTtlMinutes: 120,
       defaultTtlMinutes: 60,
+      checkInTime: '15:00',
     },
   })
 
@@ -75,6 +77,13 @@ export default function RegisterAccommodationPage() {
               />
             </div>
             <Input label="호스트명" id="hostName" placeholder="김호스트" error={errors.hostName?.message} {...register('hostName')} />
+            <Input
+              label="체크인 시간 (HH:mm) — 이 시각이 지나면 자동 체크인 처리"
+              id="checkInTime"
+              type="time"
+              error={errors.checkInTime?.message}
+              {...register('checkInTime')}
+            />
           </div>
         </Card>
 
