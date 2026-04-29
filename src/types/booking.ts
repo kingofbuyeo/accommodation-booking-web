@@ -35,3 +35,15 @@ export interface PlaceOrderRequest {
   phone: string
   headcount: number
 }
+
+export interface CancellationPreview {
+  bookingOrderId: number
+  paidAmount: number | string
+  refundAmount: number | string
+  penaltyAmount: number | string
+  currency: string
+  appliedRefundRatio: number | string
+  daysUntilCheckIn: number
+  cancelable: boolean
+  reasonIfNotCancelable: string | null
+}
