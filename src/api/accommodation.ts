@@ -44,4 +44,15 @@ export const accommodationApi = {
     client.delete<void>(
       `/accommodations/${accommodationId}/rooms/${roomId}/schedules/block/${date}`,
     ),
+
+  /** Week3 신규: 호스트가 방의 부분취소 정책을 설정/삭제한다. null 이면 정책 삭제(= 부분취소 불가). */
+  updatePartialCancellationPolicy: (
+    accommodationId: number,
+    roomId: number,
+    policy: { enabled: boolean; deadlineDaysBeforeCheckIn: number; penaltyRatio: number } | null,
+  ) =>
+    client.put<void>(
+      `/accommodations/${accommodationId}/rooms/${roomId}/partial-cancellation-policy`,
+      policy,
+    ),
 }

@@ -43,6 +43,8 @@ export interface Room {
   pricePerNight: number
   currency: string
   operationPolicy: AccommodationOperationPolicy
+  /** null 이면 부분취소 미허용 */
+  partialCancellationPolicy: PartialCancellationPolicy | null
   blockedDates: BlockedDate[]
   bookedDates: string[]
 }
@@ -74,6 +76,16 @@ export interface RegisterAccommodationRequest {
   checkInTime?: string
 }
 
+// Week3 신규: 부분취소 정책
+export interface PartialCancellationPolicy {
+  enabled: boolean
+  deadlineDaysBeforeCheckIn: number
+  /** 환불 비율 (0.0~1.0). 예: 0.9 = 페널티 10% */
+  penaltyRatio: number
+  /** BE 편의 제공 필드: 화면 표시용 퍼센트. 예: 10 (= 페널티 10%) */
+  penaltyPercent?: number
+}
+
 export interface AddRoomRequest {
   roomName: string
   capacity: number
@@ -84,6 +96,8 @@ export interface AddRoomRequest {
   longLeadTimeTtlMinutes: number
   defaultTtlMinutes: number
   cancellationPenaltyTiers?: CancellationPenaltyTier[]
+  /** Week3 신규: 부분취소 정책 (미지정 시 부분취소 불가) */
+  partialCancellationPolicy?: PartialCancellationPolicy
 }
 
 export interface BlockScheduleRequest {

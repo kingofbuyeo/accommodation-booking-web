@@ -10,6 +10,7 @@ import HostDashboardPage       from './pages/host/HostDashboardPage'
 import RegisterAccommodationPage from './pages/host/RegisterAccommodationPage'
 import AddRoomPage             from './pages/host/AddRoomPage'
 import BlockSchedulePage       from './pages/host/BlockSchedulePage'
+import PartialCancelPolicyPage from './pages/host/PartialCancelPolicyPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="host/accommodations/new" element={<RegisterAccommodationPage />} />
             <Route path="host/accommodations/:accommodationId/rooms/new" element={<AddRoomPage />} />
             <Route path="host/accommodations/:accommodationId/rooms/:roomId/block" element={<BlockSchedulePage />} />
+            <Route path="host/accommodations/:accommodationId/rooms/:roomId/partial-cancel-policy" element={<PartialCancelPolicyPage />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

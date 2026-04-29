@@ -6,13 +6,23 @@ export type BookingStatus =
   | 'CANCELLED'
   | 'EXPIRED'
 
+export interface CancelledRange {
+  checkIn: string
+  checkOut: string
+  nights: number
+}
+
 export interface LineItem {
+  lineItemId: number
   accommodationName: string
   roomName: string
   checkIn: string
   checkOut: string
   nights: number
+  activeNights: number
   lineTotal: number
+  partialCancelEnabled: boolean | null
+  cancelledRanges: CancelledRange[]
 }
 
 export interface BookingOrder {
@@ -23,7 +33,7 @@ export interface BookingOrder {
   currency: string
   lineItems: LineItem[]
   createdAt: string
-  expiresAt?: string   // REQUESTED 상태일 때만 존재
+  expiresAt?: string
 }
 
 export interface PlaceOrderRequest {
@@ -46,4 +56,30 @@ export interface CancellationPreview {
   daysUntilCheckIn: number
   cancelable: boolean
   reasonIfNotCancelable: string | null
+}
+
+// Week3 신규: 부분취소
+export interface PartialCancellationPreview {
+  orderId: number
+  lineItemId: number
+  cancelCheckIn: string
+  cancelCheckOut: string
+  cancelNights: number
+  cancelledAmount: number
+  refundAmount: number
+  penaltyAmount: number
+  currency: string
+  refundRatio: number
+  partialCancelable: boolean
+  reasonCode: string | null
+  reasonMessage: string | null
+}
+
+export interface PartialCancelResult {
+  orderId: number
+  refundAmount: number
+  penaltyAmount: number
+  currency: string
+  remainingNights: number
+  convertedToFullCancel: boolean
 }
