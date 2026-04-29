@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ChevronLeft } from 'lucide-react'
@@ -18,6 +18,10 @@ const schema = z.object({
   longLeadTimeDays:        z.coerce.number().min(1),
   longLeadTimeTtlMinutes:  z.coerce.number().min(1),
   defaultTtlMinutes:       z.coerce.number().min(1),
+  // Week3 신규: 부분취소 정책
+  partialCancelEnabled:            z.boolean().default(false),
+  partialCancelDeadlineDays:       z.coerce.number().min(0).default(7),
+  partialCancelPenaltyRatioPercent: z.coerce.number().min(0).max(100).default(10),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -31,6 +35,7 @@ export default function AddRoomPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -41,11 +46,33 @@ export default function AddRoomPage() {
       longLeadTimeDays: 30,
       longLeadTimeTtlMinutes: 120,
       defaultTtlMinutes: 60,
+      partialCancelEnabled: false,
+      partialCancelDeadlineDays: 7,
+      partialCancelPenaltyRatioPercent: 10,
     },
   })
 
+  const partialCancelEnabled = useWatch({ control, name: 'partialCancelEnabled' })
+
   const mutation = useMutation({
-    mutationFn: (values: FormValues) => accommodationApi.addRoom(accId, values),
+    mutationFn: (values: FormValues) =>
+      accommodationApi.addRoom(accId, {
+        roomName: values.roomName,
+        capacity: values.capacity,
+        pricePerNight: values.pricePerNight,
+        shortLeadTimeDays: values.shortLeadTimeDays,
+        shortLeadTimeTtlMinutes: values.shortLeadTimeTtlMinutes,
+        longLeadTimeDays: values.longLeadTimeDays,
+        longLeadTimeTtlMinutes: values.longLeadTimeTtlMinutes,
+        defaultTtlMinutes: values.defaultTtlMinutes,
+        partialCancellationPolicy: values.partialCancelEnabled
+          ? {
+              enabled: true,
+              deadlineDaysBeforeCheckIn: values.partialCancelDeadlineDays,
+              penaltyRatio: (100 - values.partialCancelPenaltyRatioPercent) / 100,
+            }
+          : undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accommodations'] })
       queryClient.invalidateQueries({ queryKey: ['accommodation', accId] })
@@ -127,6 +154,46 @@ export default function AddRoomPage() {
               error={errors.defaultTtlMinutes?.message}
               {...register('defaultTtlMinutes')}
             />
+          </div>
+        </Card>
+
+        {/* Week3 신규: 부분취소 정책 */}
+        <Card>
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-gray-800">부분취소 정책</h2>
+            <p className="text-xs text-gray-500">고객이 예약된 날짜 일부를 취소할 수 있도록 허용합니다.</p>
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                {...register('partialCancelEnabled')}
+              />
+              <span className="text-sm text-gray-700">부분취소 허용</span>
+            </label>
+
+            {partialCancelEnabled && (
+              <div className="mt-2 space-y-3 rounded-lg bg-blue-50 p-3">
+                <Input
+                  label="취소 가능 기간 (체크인 N일 전까지)"
+                  id="partialCancelDeadlineDays"
+                  type="number"
+                  min={0}
+                  error={errors.partialCancelDeadlineDays?.message}
+                  {...register('partialCancelDeadlineDays')}
+                />
+                <Input
+                  label="페널티 비율 (%) — 0: 수수료 없음, 10: 10% 차감"
+                  id="partialCancelPenaltyRatioPercent"
+                  type="number"
+                  min={0}
+                  max={100}
+                  error={errors.partialCancelPenaltyRatioPercent?.message}
+                  {...register('partialCancelPenaltyRatioPercent')}
+                />
+                <p className="text-xs text-blue-700">예: 페널티 10% → 취소 금액의 90%가 환불됩니다.</p>
+              </div>
+            )}
           </div>
         </Card>
 

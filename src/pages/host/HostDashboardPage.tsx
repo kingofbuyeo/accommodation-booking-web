@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { PlusCircle, ChevronRight, BedDouble, Calendar } from 'lucide-react'
+import { PlusCircle, ChevronRight, BedDouble, Calendar, RotateCcw } from 'lucide-react'
 import { accommodationApi } from '../../api/accommodation'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -57,13 +57,26 @@ export default function HostDashboardPage() {
                 </Button>
               </Link>
               {acc.rooms.map((room) => (
-                <Link key={room.id} to={`/host/accommodations/${acc.id}/rooms/${room.id}/block`}>
-                  <Button variant="ghost" size="sm">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {room.name} 예약 불가 일정 설정
-                    <ChevronRight className="h-3 w-3" />
-                  </Button>
-                </Link>
+                <div key={room.id} className="flex flex-wrap gap-2">
+                  <Link to={`/host/accommodations/${acc.id}/rooms/${room.id}/block`}>
+                    <Button variant="ghost" size="sm">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {room.name} 예약 불가 일정
+                      <ChevronRight className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                  <Link to={`/host/accommodations/${acc.id}/rooms/${room.id}/partial-cancel-policy`}>
+                    <Button variant="ghost" size="sm">
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      {room.name} 부분취소 정책
+                      {room.partialCancellationPolicy
+                        ? <span className="ml-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-xs text-blue-700">허용</span>
+                        : <span className="ml-1 rounded-full bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">불가</span>
+                      }
+                      <ChevronRight className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
               ))}
             </div>
           </div>

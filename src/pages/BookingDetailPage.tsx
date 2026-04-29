@@ -5,9 +5,10 @@ import dayjs from 'dayjs'
 import { bookingApi } from '../api/booking'
 import BookingStatusBadge from '../components/BookingStatusBadge'
 import ExpiryCountdown from '../components/ExpiryCountdown'
+import PartialCancelModal from '../components/PartialCancelModal'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
-import type { BookingStatus, CancellationPreview } from '../types/booking'
+import type { BookingStatus, CancellationPreview, LineItem } from '../types/booking'
 
 export default function BookingDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
@@ -17,6 +18,7 @@ export default function BookingDetailPage() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewData, setPreviewData] = useState<CancellationPreview | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
+  const [partialCancelTarget, setPartialCancelTarget] = useState<LineItem | null>(null)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['booking', id],
@@ -65,7 +67,7 @@ export default function BookingDetailPage() {
   const checkOut = useMutation({ mutationFn: () => bookingApi.checkOut(id), onSuccess: invalidate })
 
   const anyPending = [confirm, cancel, preview, checkIn, checkOut, hostCancel].some((m) => m.isPending)
-  const lastError  = [confirm, cancel, checkIn, checkOut, hostCancel].find((m) => m.isError)?.error
+  const lastError = [confirm, cancel, checkIn, checkOut, hostCancel].find((m) => m.isError)?.error
 
   if (isLoading) return <div className="animate-pulse space-y-4"><div className="h-8 w-40 rounded bg-gray-200" /><div className="h-48 rounded-xl bg-gray-200" /></div>
   if (isError || !data) return <div className="rounded-lg bg-red-50 p-6 text-red-700">예약 정보를 불러오지 못했습니다.</div>
@@ -104,7 +106,7 @@ export default function BookingDetailPage() {
             <Row label="객실"    value={item.roomName} />
             <Row label="체크인"  value={dayjs(item.checkIn).format('YYYY.MM.DD (ddd)')} />
             <Row label="체크아웃" value={dayjs(item.checkOut).format('YYYY.MM.DD (ddd)')} />
-            <Row label="투숙일"  value={`${item.nights}박`} />
+            <Row label="투숙일"  value={`${item.activeNights ?? item.nights}박 활성 / ${item.nights}박 예약`} />
             <div className="border-t border-gray-100 pt-2">
               <Row
                 label="결제 금액"
@@ -113,6 +115,36 @@ export default function BookingDetailPage() {
               />
             </div>
           </dl>
+
+          {/* 부분취소된 구간 표시 */}
+          {item.cancelledRanges && item.cancelledRanges.length > 0 && (
+            <div className="mt-3 rounded-lg bg-red-50 p-3">
+              <p className="mb-1 text-xs font-medium text-red-700">부분취소된 날짜</p>
+              {item.cancelledRanges.map((r, i) => (
+                <p key={i} className="text-xs text-red-600">
+                  {dayjs(r.checkIn).format('MM/DD')} ~ {dayjs(r.checkOut).format('MM/DD')} ({r.nights}박)
+                </p>
+              ))}
+            </div>
+          )}
+
+          {/* CONFIRMED 상태이고 부분취소 가능한 경우 버튼 표시 */}
+          {data.status === 'CONFIRMED' && (
+            <div className="mt-3">
+              {/* partialCancelEnabled가 명시적으로 false가 아닐 때(null 포함) 미리보기 API에서 정확히 확인 */}
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setPartialCancelTarget(item)}
+                disabled={anyPending}
+              >
+                부분취소
+              </Button>
+              {item.partialCancelEnabled === false && (
+                <p className="mt-1 text-xs text-gray-500">※ 이 숙소는 부분취소가 허용되지 않습니다.</p>
+              )}
+            </div>
+          )}
         </Card>
       )}
 
@@ -155,6 +187,19 @@ export default function BookingDetailPage() {
             setPreviewError(null)
           }}
           onConfirm={() => cancel.mutate()}
+        />
+      )}
+
+      {/* Week3 신규: 부분취소 모달 */}
+      {partialCancelTarget && (
+        <PartialCancelModal
+          orderId={id}
+          lineItem={partialCancelTarget}
+          onClose={() => setPartialCancelTarget(null)}
+          onSuccess={() => {
+            setPartialCancelTarget(null)
+            invalidateWithAccommodation()
+          }}
         />
       )}
     </div>
